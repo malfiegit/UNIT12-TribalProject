@@ -1,0 +1,19 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PanelHoverScript : MonoBehaviour
+{
+    //hover boolean for control panel
+    public bool PanelHovered = false;
+
+    private void OnMouseEnter()
+    {
+        PanelHovered = true;
+    }
+
+    private void OnMouseExit()
+    {
+        PanelHovered = false;
+    }
+}
