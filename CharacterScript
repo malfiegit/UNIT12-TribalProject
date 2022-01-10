@@ -1,0 +1,254 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CharacterScript : MonoBehaviour
+{
+    //---child 0 = character sprite ---child 1 = selection cirlce---child 2 = action circle---//
+
+    //camp
+    public GameObject camp;
+
+    //lists
+    public GameObject[] forests;
+
+    //game objects
+    public GameObject controlPanel;
+    public GameObject buttonManager;
+    public GameObject FRCounter;
+
+    //character conditions
+    public bool hovered = false;
+    public bool selected = false;
+    public bool doingAction = false;
+
+    //target game object for when the character has to move to places when doing actions
+    public GameObject targetObject;
+
+    //speed of character
+    public float speed;
+
+    //action time and timer
+    public float actionTimer;
+    public int actionTime;
+
+    //character action booleans
+    private bool lookingForFood = false;
+    private bool lookingForResources = false;
+    private bool breeding = false;
+    private bool goingBackToCamp = false;
+
+    //action booleans to check what the task was that the character was doing after they have completed the task
+    private bool wasLookingForFood = false;
+    private bool wasLookingForResources = false;
+
+    //shows that the character is being hovered by mouse
+    private void OnMouseEnter()
+    {
+        hovered = true;
+    }
+
+    private void OnMouseExit()
+    {
+        hovered = false;
+    }
+
+    void Update()
+    {
+        //character is selected when hovered over and clicked on and deselected when clicked away from
+        if (hovered && Input.GetMouseButtonDown(0))
+        {
+            if (!doingAction)
+            {
+                selected = true;
+            }
+
+            else if (doingAction)
+            {
+                return;
+            }
+        }
+
+        else if (!hovered && Input.GetMouseButtonDown(0))
+        {
+            if (controlPanel.GetComponent<PanelHoverScript>().PanelHovered == false)
+            {
+                selected = false;
+                gameObject.transform.GetChild(1).gameObject.SetActive(false);
+            }
+
+            else
+            {
+                return;
+            }
+        }
+
+        //show control panel and selection circle if selected and hide them when deselected
+        if (selected == true)
+        {
+            controlPanel.SetActive(true);
+            gameObject.transform.GetChild(1).gameObject.SetActive(true);
+
+            //sets the selected character in the button manager script to this character's game object
+            buttonManager.GetComponent<ButtonManager>().selectedCharacter = gameObject;
+        }
+
+        if (selected == false)
+        {
+            controlPanel.SetActive(false);
+
+            //there is now no selected character
+            buttonManager.GetComponent<ButtonManager>().selectedCharacter = null;
+        }
+
+        //actions for the character
+        if (lookingForResources == true)
+        {
+            //character is not selected anymore and action circle is shown
+            selected = false;
+
+            gameObject.transform.GetChild(1).gameObject.SetActive(false);
+            gameObject.transform.GetChild(2).gameObject.SetActive(true);
+
+            doingAction = true;
+
+            //moves toward target object
+            transform.position = Vector2.MoveTowards(transform.position, targetObject.transform.position, speed * Time.deltaTime);
+
+            if (transform.position == targetObject.transform.position)
+            {
+                //StartCoroutine(CharacterGoInvisible());
+                actionTimer += Time.deltaTime;
+
+                //stays invisible for anywhere between 2-3 minutes once character reaches target position
+                if (actionTimer < actionTime)
+                {
+                    //character goes invisible
+                    gameObject.transform.GetChild(0).gameObject.SetActive(false);
+                    gameObject.transform.GetChild(2).gameObject.SetActive(false);
+                }
+
+                if (actionTimer > actionTime)
+                {
+                    //booleon to show character had been looking for resources is set to true so that going back to camp boolean can read it and add the correct item
+                    wasLookingForResources = true;
+
+                    //character goes back to being visible
+                    gameObject.transform.GetChild(0).gameObject.SetActive(true);
+                    gameObject.transform.GetChild(2).gameObject.SetActive(true);
+
+                    //character is no longer looking for resources and is now going back to their camp
+                    lookingForResources = false;
+                    goingBackToCamp = true;
+                }
+            }
+        }
+
+        if (lookingForFood == true)
+        {
+            //character is not selected anymore and action circle is shown
+            selected = false;
+
+            gameObject.transform.GetChild(1).gameObject.SetActive(false);
+            gameObject.transform.GetChild(2).gameObject.SetActive(true);
+
+            doingAction = true;
+
+            //moves toward target object
+            transform.position = Vector2.MoveTowards(transform.position, targetObject.transform.position, speed * Time.deltaTime);
+
+            if (transform.position == targetObject.transform.position)
+            {
+                //StartCoroutine(CharacterGoInvisible());
+                actionTimer += Time.deltaTime;
+
+                //stays invisible for anywhere between 2-3 minutes once character reaches target position
+                if (actionTimer < actionTime)
+                {
+                    //character goes invisible
+                    gameObject.transform.GetChild(0).gameObject.SetActive(false);
+                    gameObject.transform.GetChild(2).gameObject.SetActive(false);
+                }
+
+                if (actionTimer > actionTime)
+                {
+                    //booleon to show character had been looking for food is set to true so that going back to camp boolean can read it and add the correct item
+                    wasLookingForFood = true;
+
+                    //character goes back to being visible
+                    gameObject.transform.GetChild(0).gameObject.SetActive(true);
+                    gameObject.transform.GetChild(2).gameObject.SetActive(true);
+
+                    //character is no longer looking for food and is now going back to their camp
+                    lookingForFood = false;
+                    goingBackToCamp = true;
+                }
+            }
+        }
+
+        //goes back towards camp when boolean is set to true
+        if (goingBackToCamp == true)
+        {
+            transform.position = Vector2.MoveTowards(transform.position, camp.transform.position, speed * Time.deltaTime);
+
+            if (transform.position == camp.transform.position)
+            {
+                //character is no longer on it's way back to camp or doing an action
+                goingBackToCamp = false;
+                doingAction = false;
+
+                //action circle no longer shown
+                gameObject.transform.GetChild(2).gameObject.SetActive(false);
+
+                if (wasLookingForResources == true)
+                {
+                    //adds resources to resource count
+                    FRCounter.GetComponent<FRCounterScript>().resourceCount += Random.Range(2, 3);
+                    Debug.Log("Resources added!");
+                    wasLookingForResources = false;
+                }
+
+                if (wasLookingForFood == true)
+                {
+                    //adds food to food count
+                    FRCounter.GetComponent<FRCounterScript>().foodCount += Random.Range(2, 3);
+                    Debug.Log("Food added!");
+                    wasLookingForFood = false;
+                }
+
+                return;
+            }
+        }
+    }
+
+    //for action buttons in button manager script
+    public void LookForResources()
+    {
+        //resets action timer and picks random action time between 2 to 3 minutes
+        actionTimer = 0;
+
+        actionTime = Random.Range(2, 5);
+
+        //sets target object
+        targetObject = forests[Random.Range(0, forests.Length)];
+
+        lookingForResources = true;
+    }
+    public void LookForFood()
+    {
+        //resets action timer and picks random action time between 2 to 3 minutes
+        actionTimer = 0;
+
+        actionTime = Random.Range(2, 5);
+
+        //sets target object
+        targetObject = forests[Random.Range(0, forests.Length)];
+
+        lookingForFood = true;
+    }
+
+    public void Breed()
+    {
+
+    }
+}
