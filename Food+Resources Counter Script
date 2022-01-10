@@ -1,0 +1,20 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+
+public class FRCounterScript : MonoBehaviour
+{
+    public int foodCount = 0;
+    public int resourceCount = 0;
+
+    //resource and food counter text
+    public TextMeshProUGUI foodCounter;
+    public TextMeshProUGUI resourceCounter;
+
+    private void Update()
+    {
+        foodCounter.text = "Food: " + foodCount;
+        resourceCounter.text = "Resources: " + resourceCount;
+    }
+}
