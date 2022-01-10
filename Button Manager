@@ -1,0 +1,23 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ButtonManager : MonoBehaviour
+{
+    public GameObject selectedCharacter;
+
+    public void FoodClick()
+    {
+        selectedCharacter.GetComponent<CharacterScript>().LookForFood();
+    }
+
+    public void ResourceClick()
+    {
+        selectedCharacter.GetComponent<CharacterScript>().LookForResources();
+    }
+
+    public void BreedClick()
+    {
+        selectedCharacter.GetComponent<CharacterScript>().Breed();
+    }
+}
