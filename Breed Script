@@ -1,0 +1,63 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BreedScript : MonoBehaviour
+{
+    //---this script is needed because all characters need to know that the player is trying to breed as opposed to doing it all from the character script.---//
+
+    public GameObject scripts;
+
+    //selected character is the character the player is using to breed, selected breeding character is the character the player wants them to breed with.
+    public GameObject selectedBreedingPartner;
+    public GameObject selectedCharacter;
+
+    //breeding bool
+    public bool breeding = false;
+
+    //game objects
+    public GameObject child;
+    public GameObject breedingOverlay;
+
+    private void Update()
+    {
+        if (breeding == true)
+        {
+            //whilst breeding is true, it will wait until there is a selected character to breed with and then breed.
+            if (selectedBreedingPartner == null)
+            {
+                breedingOverlay.SetActive(true);
+
+                //freezes time in the game whilst the player looks for a breeding partner for the character
+                Time.timeScale = 0;
+                return;
+            }
+
+            if (selectedBreedingPartner != null)
+            {
+                breedingOverlay.SetActive(false);
+                Time.timeScale = 1;
+                //moves the character the player wanted to breed with in the first place towards the selected breeding partner
+                selectedCharacter.transform.position = Vector2.MoveTowards(selectedCharacter.transform.position, selectedBreedingPartner.transform.position,
+                    selectedCharacter.GetComponent<CharacterScript>().speed * Time.deltaTime);
+
+                if (selectedCharacter.transform.position == selectedBreedingPartner.transform.position)
+                {
+                    //when the two characters are in the same position, a child is instantiated in the position
+                    Instantiate(child, selectedBreedingPartner.transform.position, selectedBreedingPartner.transform.rotation);
+
+                    selectedCharacter.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
+                    selectedBreedingPartner.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
+                    selectedCharacter = null;
+                    selectedBreedingPartner = null;
+                    breeding = false;
+                }
+            }
+        }
+
+        else
+        {
+            return;
+        }
+    }
+}
