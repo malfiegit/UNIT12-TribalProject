@@ -1,0 +1,89 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BlueprintScript : MonoBehaviour
+{
+    //camera game object
+    [SerializeField] private Camera mainCamera;
+
+    //build panel game object
+    public GameObject buildPanel;
+
+    //food and resources counter
+    public GameObject FRCounter;
+
+    //building game objects
+    public GameObject building1;
+    public GameObject building2;
+    public GameObject building3;
+
+    //tells the script which building the player is trying to add
+    public bool B1 = false;
+    public bool B2 = false;
+    public bool B3 = false;
+
+    private void Update()
+    {
+        //the blueprint follows mouse position
+        Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPosition.z = 1f;
+        transform.position = mouseWorldPosition;
+
+        //code will check which building the player is trying to place and instantiate it when the player clicks the mouse. The amount of resources which it is supposed to cost will be subtracted from the resource count.
+        //the building which show the script which building the character is trying to place will be set back to false when finished.
+        if (B1 == true)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (buildPanel.GetComponent<PanelHoverScript>().PanelHovered == false)
+                {
+                    Instantiate(building1, transform.position, transform.rotation);
+                    Destroy(gameObject);
+                    FRCounter.GetComponent<FRCounterScript>().resourceCount -= 30;
+                    B1 = false;
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+
+        if (B2 == true)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (buildPanel.GetComponent<PanelHoverScript>().PanelHovered == false)
+                {
+                    Instantiate(building2, transform.position, transform.rotation);
+                    Destroy(gameObject);
+                    FRCounter.GetComponent<FRCounterScript>().resourceCount -= 200;
+                    B2 = false;
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+
+        if (B3 == true)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (buildPanel.GetComponent<PanelHoverScript>().PanelHovered == false)
+                {
+                    Instantiate(building3, transform.position, transform.rotation);
+                    Destroy(gameObject);
+                    FRCounter.GetComponent<FRCounterScript>().resourceCount -= 500;
+                    B3 = false;
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+    }
+}
