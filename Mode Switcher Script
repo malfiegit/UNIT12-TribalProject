@@ -1,0 +1,30 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ModeSwitcherScript : MonoBehaviour
+{
+    public bool buildMode = false;
+
+    public GameObject buildPanel;
+    public GameObject buildButton;
+    public GameObject playButton;
+
+    public void BuildMode()
+    {
+        buildMode = true;
+
+        buildButton.SetActive(false);
+        playButton.SetActive(true);
+        buildPanel.SetActive(true);
+    }
+
+    public void PlayMode()
+    {
+        buildMode = false;
+
+        buildButton.SetActive(true);
+        playButton.SetActive(false);
+        buildPanel.SetActive(false);
+    }
+}
