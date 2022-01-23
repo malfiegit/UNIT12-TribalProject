@@ -20,4 +20,14 @@ public class ButtonManager : MonoBehaviour
     {
         selectedCharacter.GetComponent<CharacterScript>().Breed();
     }
+
+    public void CancelBreeding()
+    {
+
+    }
+
+    public void CloseBreedCooldownNotice()
+    {
+        GameObject.Find("BreedCooldownNotice").SetActive(false);
+    }
 }
