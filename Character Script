@@ -16,6 +16,7 @@ public class CharacterScript : MonoBehaviour
     public GameObject controlPanel;
     public GameObject scripts;
     public GameObject FRCounter;
+    public GameObject breedCooldownNotice;
 
     //character conditions
     public bool hovered = false;
@@ -30,7 +31,7 @@ public class CharacterScript : MonoBehaviour
 
     //action time and timer
     public float actionTimer;
-    public int actionTime;
+    public float actionTime;
 
     //character action booleans
     private bool lookingForFood = false;
@@ -45,6 +46,16 @@ public class CharacterScript : MonoBehaviour
     //adds random amount for food/resource actions
     int randomCount;
 
+    //breed cooldown
+    public float breedCooldown;
+
+    public bool breedingCancelled = false;
+
+    //stuff for character doidling
+    public bool doidling = false;
+    public bool characterShouldBeDoidling = false;
+    public int randomDirection;
+
     //shows that the character is being hovered by mouse
     private void OnMouseEnter()
     {
@@ -56,9 +67,23 @@ public class CharacterScript : MonoBehaviour
         hovered = false;
     }
 
-    void Update()
+    void Start()
+    {
+        breedCooldown = 600;
+    }
+
+    void Update(Collider2D collision)
     {
         randomCount = Random.Range(2, 5);
+
+        breedCooldown += Time.deltaTime;
+
+        //hides selection circle after breeding has been cancelled
+        if (breedingCancelled == true)
+        {
+            gameObject.transform.GetChild(1).gameObject.SetActive(false);
+            breedingCancelled = false;
+        }
 
         if (scripts.GetComponent<ModeSwitcherScript>().buildMode == false)
         {
@@ -76,8 +101,17 @@ public class CharacterScript : MonoBehaviour
 
                     if (scripts.GetComponent<BreedScript>().selectedCharacter.GetComponent<CharacterScript>().lookingForPartner == true)
                     {
-                        scripts.GetComponent<BreedScript>().selectedBreedingPartner = gameObject;
-                        gameObject.transform.GetChild(3).gameObject.SetActive(true);
+                        if (breedCooldown >= 600)
+                        {
+                            scripts.GetComponent<BreedScript>().selectedBreedingPartner = gameObject;
+                            gameObject.transform.GetChild(3).gameObject.SetActive(true);
+                        }
+
+                        else
+                        {
+                            scripts.GetComponent<BreedScript>().selectedCharacter = null;
+                            breedCooldownNotice.SetActive(true);
+                        }
                     }
                 }
 
@@ -243,6 +277,21 @@ public class CharacterScript : MonoBehaviour
                 }
             }
         }
+
+        //character doidling for when they aren't doing anything
+        if (characterShouldBeDoidling == true)
+        {
+            transform.position = Vector2.MoveTowards(transform.position, camp.transform.position, speed * Time.deltaTime);
+        }
+
+        if (doidling == true)
+        {
+            StartCoroutine(CharacterDoidling());
+        }
+        else if (doidling == false)
+        {
+            return;
+        }
     }
 
     //for action buttons in button manager script
@@ -273,14 +322,106 @@ public class CharacterScript : MonoBehaviour
 
     public void Breed()
     {
-        //shows breeding script that the player is trying to breed and shows breeding circle around character. Calls for the button manager to set the selected character in breeding script
-        scripts.GetComponent<BreedScript>().breeding = true;
-        scripts.GetComponent<BreedScript>().selectedCharacter = gameObject;
-        controlPanel.SetActive(false);
-        
-        lookingForPartner = true;
+        if (breedCooldown >= 600)
+        {
+            //shows breeding script that the player is trying to breed and shows breeding circle around character. Calls for the button manager to set the selected character in breeding script
+            scripts.GetComponent<BreedScript>().breeding = true;
+            scripts.GetComponent<BreedScript>().selectedCharacter = gameObject;
+            controlPanel.SetActive(false);
 
-        selected = false;
-        gameObject.transform.GetChild(3).gameObject.SetActive(true);
+            lookingForPartner = true;
+
+            selected = false;
+            gameObject.transform.GetChild(3).gameObject.SetActive(true);
+        }
+
+        else
+        {
+            selected = false;
+            controlPanel.SetActive(false);
+            breedCooldownNotice.SetActive(true);
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("DoidleArea"))
+        {
+            doidling = true;
+            characterShouldBeDoidling = false;
+        }
+
+        else
+        {
+            if (lookingForFood == false && lookingForResources == false && lookingForPartner == false)
+            {
+                characterShouldBeDoidling = true;
+            }
+        }
+    }
+
+    IEnumerator CharacterDoidling()
+    {
+        randomDirection = Random.Range(1, 5);
+        actionTimer = 0;
+        actionTime = Random.Range(1, 2.5f);
+
+        if (randomDirection == 1)
+        {
+            if (actionTimer < actionTime)
+            {
+                transform.position = Vector2.up * speed * Time.deltaTime;
+            }
+            else
+            {
+                randomDirection = Random.Range(1, 5);
+                actionTimer = 0;
+                actionTime = Random.Range(1, 2.5f);
+            }
+        }
+        else if (randomDirection == 1)
+        {
+            if (actionTimer < actionTime)
+            {
+                transform.position = Vector2.down * speed * Time.deltaTime;
+            }
+            else
+            {
+                randomDirection = Random.Range(1, 5);
+                actionTimer = 0;
+                actionTime = Random.Range(1, 2.5f);
+            }
+        }
+        else if (randomDirection == 1)
+        {
+            if (actionTimer < actionTime)
+            {
+                transform.position = Vector2.left * speed * Time.deltaTime;
+            }
+            else
+            {
+                randomDirection = Random.Range(1, 5);
+                actionTimer = 0;
+                actionTime = Random.Range(1, 2.5f);
+            }
+        }
+        else if (randomDirection == 1)
+        {
+            if (actionTimer < actionTime)
+            {
+                transform.position = Vector2.right * speed * Time.deltaTime;
+            }
+            else
+            {
+                randomDirection = Random.Range(1, 5);
+                actionTimer = 0;
+                actionTime = Random.Range(1, 2.5f);
+            }
+        }
+
+        else
+        {
+            yield break;
+        }
     }
 }
