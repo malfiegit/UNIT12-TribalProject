@@ -1,0 +1,45 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraMovement : MonoBehaviour
+{
+    public float speed;
+
+    //game objects that will follow the camera as it moves
+    public GameObject canvas;
+    public GameObject messages;
+
+    public bool movingUp = false;
+    public bool movingDown = false;
+    public bool movingLeft = false;
+    public bool movingRight = false;
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            transform.position += Vector3.up * speed;
+            canvas.transform.position += Vector3.up * speed;
+            messages.transform.position += Vector3.up * speed;
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            transform.position += Vector3.down * speed;
+            canvas.transform.position += Vector3.down * speed;
+            messages.transform.position += Vector3.down * speed;
+        }
+        else if (Input.GetKeyDown(KeyCode.A))
+        {
+            transform.position += Vector3.left * speed;
+            canvas.transform.position += Vector3.left * speed;
+            messages.transform.position += Vector3.left * speed;
+        }
+        else if (Input.GetKeyDown(KeyCode.D))
+        {
+            transform.position += Vector3.right * speed;
+            canvas.transform.position += Vector3.right * speed;
+            messages.transform.position += Vector3.right * speed;
+        }
+    }
+}
