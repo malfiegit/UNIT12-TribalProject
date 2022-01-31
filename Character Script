@@ -16,6 +16,7 @@ public class CharacterScript : MonoBehaviour
     public GameObject controlPanel;
     public GameObject scripts;
     public GameObject FRCounter;
+    public GameObject breedCooldownNotice;
 
     //character conditions
     public bool hovered = false;
@@ -30,7 +31,7 @@ public class CharacterScript : MonoBehaviour
 
     //action time and timer
     public float actionTimer;
-    public int actionTime;
+    public float actionTime;
 
     //character action booleans
     private bool lookingForFood = false;
@@ -45,6 +46,15 @@ public class CharacterScript : MonoBehaviour
     //adds random amount for food/resource actions
     int randomCount;
 
+    //breed cooldown
+    public float breedCooldown;
+
+    public bool breedingCancelled = false;
+
+    //stuff for character doidling
+    public bool characterShouldBeDoidling = true;
+    public int randomDirection;
+
     //shows that the character is being hovered by mouse
     private void OnMouseEnter()
     {
@@ -56,9 +66,23 @@ public class CharacterScript : MonoBehaviour
         hovered = false;
     }
 
+    void Start()
+    {
+        breedCooldown = 600;
+    }
+
     void Update()
     {
         randomCount = Random.Range(2, 5);
+
+        breedCooldown += Time.deltaTime;
+
+        //hides selection circle after breeding has been cancelled
+        if (breedingCancelled == true)
+        {
+            gameObject.transform.GetChild(1).gameObject.SetActive(false);
+            breedingCancelled = false;
+        }
 
         if (scripts.GetComponent<ModeSwitcherScript>().buildMode == false)
         {
@@ -68,16 +92,31 @@ public class CharacterScript : MonoBehaviour
                 //character can only be selected if they're not doing an action
                 if (!doingAction)
                 {
-                    //if the player isn't trying to breed any characters and they select one then they will be selected, if they are then the selected character will be the selected breeding character.
-                    if (scripts.GetComponent<BreedScript>().breeding == false)
+                    if (scripts.GetComponent<BreedScript>().selectedCharacter != null)
                     {
-                        selected = true;
+                        if (scripts.GetComponent<BreedScript>().selectedCharacter.GetComponent<CharacterScript>().lookingForPartner == true)
+                        {
+                            if (breedCooldown >= 600)
+                            {
+                                Debug.Log(gameObject.name + " is the selected breeding partner");
+
+                                scripts.GetComponent<BreedScript>().selectedBreedingPartner = gameObject;
+                                gameObject.transform.GetChild(3).gameObject.SetActive(true);
+                            }
+
+                            else
+                            {
+                                scripts.GetComponent<BreedScript>().selectedCharacter = null;
+                                breedCooldownNotice.SetActive(true);
+                            }
+                        }
                     }
 
-                    if (scripts.GetComponent<BreedScript>().selectedCharacter.GetComponent<CharacterScript>().lookingForPartner == true)
+                    else if (scripts.GetComponent<BreedScript>().selectedCharacter == null)
                     {
-                        scripts.GetComponent<BreedScript>().selectedBreedingPartner = gameObject;
-                        gameObject.transform.GetChild(3).gameObject.SetActive(true);
+                        Debug.Log(gameObject.name + " is selected");
+
+                        selected = true;
                     }
                 }
 
@@ -97,6 +136,11 @@ public class CharacterScript : MonoBehaviour
                         selected = false;
                         controlPanel.SetActive(false);
                         gameObject.transform.GetChild(1).gameObject.SetActive(false);
+                    }
+
+                    else if (controlPanel.GetComponent<PanelHoverScript>().PanelHovered == true)
+                    {
+                        return;
                     }
                 }
             }
@@ -243,11 +287,19 @@ public class CharacterScript : MonoBehaviour
                 }
             }
         }
+
+        //if the character isn't doing anything they will go back to the camp and start doidling if they are outside of a doidling area
+        if (characterShouldBeDoidling == true)
+        {
+            transform.position = Vector2.MoveTowards(transform.position, camp.transform.position, speed * Time.deltaTime);
+        }
     }
 
     //for action buttons in button manager script
     public void LookForResources()
     {
+        Debug.Log(gameObject.name + " is looking for resources");
+
         //resets action timer and picks random action time between 2 to 3 minutes
         actionTimer = 0;
 
@@ -260,6 +312,8 @@ public class CharacterScript : MonoBehaviour
     }
     public void LookForFood()
     {
+        Debug.Log(gameObject.name + " is looking for food");
+
         //resets action timer and picks random action time between 2 to 3 minutes
         actionTimer = 0;
 
@@ -273,14 +327,124 @@ public class CharacterScript : MonoBehaviour
 
     public void Breed()
     {
-        //shows breeding script that the player is trying to breed and shows breeding circle around character. Calls for the button manager to set the selected character in breeding script
-        scripts.GetComponent<BreedScript>().breeding = true;
-        scripts.GetComponent<BreedScript>().selectedCharacter = gameObject;
-        controlPanel.SetActive(false);
-        
-        lookingForPartner = true;
+        if (breedCooldown >= 600)
+        {
+            Debug.Log(gameObject.name + " wants to breed");
 
-        selected = false;
-        gameObject.transform.GetChild(3).gameObject.SetActive(true);
+            //shows breeding script that the player is trying to breed and shows breeding circle around character. Calls for the button manager to set the selected character in breeding script
+            scripts.GetComponent<BreedScript>().breeding = true;
+            scripts.GetComponent<BreedScript>().selectedCharacter = gameObject;
+            controlPanel.SetActive(false);
+
+            lookingForPartner = true;
+
+            selected = false;
+            gameObject.transform.GetChild(3).gameObject.SetActive(true);
+        }
+
+        else
+        {
+            selected = false;
+            controlPanel.SetActive(false);
+            breedCooldownNotice.SetActive(true);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "DoidleArea")
+        {
+            Debug.Log("in doidle area");
+
+            //character starts doidling when they aren't doing anything and are within a doidle area
+            if (!lookingForFood && !lookingForResources && !lookingForPartner && !goingBackToCamp && !doingAction)
+            {
+                StartCoroutine(CharacterDoidling());
+                characterShouldBeDoidling = false;
+            }
+            else
+            {
+                return;
+            }
+        }
+    }
+    private void OnTriggerExit(Collider collision)
+    {
+        if (collision.gameObject.tag == "DoidleArea")
+        {
+            Debug.Log("exited doidle area");
+
+            //if the character still isn't doing anything but they doidle outside of the doidle area then the boolean for character should be doidling is set to true
+            if (!lookingForFood && !lookingForResources && !lookingForPartner && !goingBackToCamp && !doingAction)
+            {
+                StopCoroutine(CharacterDoidling());
+                characterShouldBeDoidling = true;
+            }
+            else
+            {
+                return;
+            }
+        }
+    }
+    void OnColliderEnter2D(Collider2D collision)
+    {
+        //if the character is the selected character and they collide with the selected breeding partner a baby will be born
+        if (collision.gameObject == scripts.GetComponent<BreedScript>().selectedBreedingPartner && scripts.GetComponent<BreedScript>().selectedCharacter == gameObject)
+        {
+            Debug.Log("A child is born!");
+
+            //when they touch a baby is born and the breed script is made aware that the player is no longer trying to breed. Selected character and selected breeding partner are set to null
+            Instantiate(scripts.GetComponent<BreedScript>().child, scripts.GetComponent<BreedScript>().selectedBreedingPartner.transform.position, scripts.GetComponent<BreedScript>().selectedBreedingPartner.transform.rotation);
+
+            scripts.GetComponent<BreedScript>().selectedCharacter.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
+            scripts.GetComponent<BreedScript>().selectedBreedingPartner.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
+            scripts.GetComponent<BreedScript>().selectedCharacter = null;
+            scripts.GetComponent<BreedScript>().selectedBreedingPartner = null;
+            scripts.GetComponent<BreedScript>().breeding = false;
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    IEnumerator CharacterDoidling()
+    {
+        randomDirection = Random.Range(1, 5);
+        actionTimer = 0;
+        actionTime = Random.Range(1, 2.5f);
+
+        actionTimer += Time.deltaTime;
+
+        if (actionTimer < actionTime)
+        {
+            if (randomDirection == 1)
+            {
+                transform.position = Vector2.up * speed * Time.deltaTime;
+            }
+            else if (randomDirection == 2)
+            {
+                transform.position = Vector2.down * speed * Time.deltaTime;
+            }
+            else if (randomDirection == 3)
+            {
+                transform.position = Vector2.left * speed * Time.deltaTime;
+            }
+            else if (randomDirection == 4)
+            {
+                transform.position = Vector2.right * speed * Time.deltaTime;
+            }
+        }
+        if (actionTimer > actionTime)
+        {
+            new WaitForSeconds(Random.Range(1, 2));
+            randomDirection = Random.Range(1, 5);
+            actionTimer = 0;
+            actionTime = Random.Range(1, 2.5f);
+        }
+        else
+        {
+            yield break;
+        }
     }
 }
