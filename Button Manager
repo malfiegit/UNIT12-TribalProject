@@ -5,6 +5,7 @@ using UnityEngine;
 public class ButtonManager : MonoBehaviour
 {
     public GameObject selectedCharacter;
+    public GameObject scripts;
 
     public void FoodClick()
     {
@@ -23,11 +24,35 @@ public class ButtonManager : MonoBehaviour
 
     public void CancelBreeding()
     {
+        scripts.GetComponent<CharacterCountScript>().playerCharacters -= 1;
 
+        scripts.GetComponent<BreedScript>().breedingOverlay.SetActive(false);
+        Time.timeScale = 1;
+
+        scripts.GetComponent<ModeSwitcherScript>().buildButton.SetActive(true);
+
+        //hides breeding circles for characters involved in breeding
+        scripts.GetComponent<BreedScript>().selectedCharacter.transform.GetChild(3).gameObject.SetActive(false);
+        if (scripts.GetComponent<BreedScript>().selectedBreedingPartner != null)
+        {
+            scripts.GetComponent<BreedScript>().selectedBreedingPartner.transform.GetChild(3).gameObject.SetActive(false);
+        }
+
+        //sets breeding to false in the breeding script and shows the selected character that they should be doidling
+        scripts.GetComponent<BreedScript>().selectedCharacter.GetComponent<CharacterScript>().characterShouldBeDoidling = true;
+        scripts.GetComponent<BreedScript>().breeding = false;
+
+        scripts.GetComponent<BreedScript>().selectedCharacter = null;
+        scripts.GetComponent<BreedScript>().selectedBreedingPartner = null;
     }
 
     public void CloseBreedCooldownNotice()
     {
         GameObject.Find("BreedCooldownNotice").SetActive(false);
+    }
+
+    public void CloseBreedLimitNotice()
+    {
+        GameObject.Find("BreedLimitNotice").SetActive(false);
     }
 }
