@@ -9,7 +9,7 @@ public class CharacterScript : MonoBehaviour
     //camp
     public GameObject camp;
 
-    //lists
+    //arrays
     public GameObject[] forests;
 
     //game objects
@@ -53,12 +53,17 @@ public class CharacterScript : MonoBehaviour
     public bool breedingCancelled = false;
 
     //stuff for character doidling
-    public bool characterShouldBeDoidling = true;
-    public bool doidling = false;
+    public bool doidling;
+    //-SET BOTH OF THESE VALUES TO TRUE IN A SCRIPT TO MAKE THE CHARACTER DOIDLE-//
+    public bool lookingForDoidlePoint = true;
+    public bool resetWaitValues = true;
 
-    public bool inDoidleArea = false;
+    public GameObject targetDoidlePoint;
 
-    public int randomDirection;
+    public float doidleSpeed;
+
+    public float waitTime;
+    public float waitTimer;
 
     //shows that the character is being hovered by mouse
     private void OnMouseEnter()
@@ -182,7 +187,6 @@ public class CharacterScript : MonoBehaviour
                 //checks that the character is in the same location as the target object, but not on the z axis
                 if ((transform.position.x, transform.position.y) == (targetObject.transform.position.x, targetObject.transform.position.y))
                 {
-                    //StartCoroutine(CharacterGoInvisible());
                     actionTimer += Time.deltaTime;
 
                     //stays invisible for anywhere between 2-3 minutes once character reaches target position
@@ -230,7 +234,6 @@ public class CharacterScript : MonoBehaviour
                 //checks that the character is in the same location as the target object, but not on the z axis
                 if ((transform.position.x, transform.position.y) == (targetObject.transform.position.x, targetObject.transform.position.y))
                 {
-                    //StartCoroutine(CharacterGoInvisible());
                     actionTimer += Time.deltaTime;
 
                     //stays invisible for anywhere between 2-3 minutes once character reaches target position
@@ -293,10 +296,89 @@ public class CharacterScript : MonoBehaviour
             }
         }
 
-        //if the character isn't doing anything they will go back to the camp and start doidling if they are outside of a doidling area
-        if (characterShouldBeDoidling == true)
+        //--DOIDLING--//]
+        if (!lookingForFood && !lookingForResources && !lookingForPartner && !goingBackToCamp && !doingAction)
         {
-            transform.position = Vector2.MoveTowards(transform.position, camp.transform.position, speed * Time.deltaTime);
+            doidling = true;
+        }
+        else
+        {
+            doidling = false;
+        }
+
+        if (doidling == true)
+        {
+            if (lookingForDoidlePoint == true)
+            {
+                if (resetWaitValues == true)
+                {
+                    //resets wait values for character doidling
+                    ResetWaitValues();
+
+                    resetWaitValues = false;
+                }
+
+                waitTimer += Time.deltaTime;
+
+                if (waitTimer < waitTime)
+                {
+                    return;
+                }
+
+                if (waitTimer > waitTime)
+                {
+                    //chooses a random doidle point as the target object
+                    targetDoidlePoint = scripts.GetComponent<DoidleList>().doidleList[Random.Range(0, scripts.GetComponent<DoidleList>().doidleList.Count)];
+
+                    if (targetDoidlePoint.GetComponent<DoidlePointScript>().taken == true)
+                    {
+                        return;
+                    }
+                    else if (targetDoidlePoint.GetComponent<DoidlePointScript>().taken == false)
+                    {
+                        lookingForDoidlePoint = false;
+                        resetWaitValues = true;
+                    }
+                }
+            }
+            if (lookingForDoidlePoint == false)
+            {
+                targetDoidlePoint.GetComponent<DoidlePointScript>().taken = true;
+
+                transform.position = Vector2.MoveTowards(transform.position, targetDoidlePoint.transform.position, doidleSpeed * Time.deltaTime);
+
+                //waits for a little bit and then finds a new doidle position
+                if (transform.position == targetDoidlePoint.transform.position)
+                {
+                    if (resetWaitValues == true)
+                    {
+                        //resets wait values for character doidling
+                        ResetWaitValues();
+
+                        resetWaitValues = false;
+                    }
+
+                    waitTimer += Time.deltaTime;
+
+                    //waits, and when over waiting time looks for a new target object
+                    if (waitTimer < waitTime)
+                    {
+                        return;
+                    }
+                    else if (waitTimer > waitTime)
+                    {
+                        targetDoidlePoint.GetComponent<DoidlePointScript>().taken = false;
+
+                        lookingForDoidlePoint = true;
+                    }
+                }
+            }
+        }
+        
+        else if (doidling == false)
+        {
+            targetDoidlePoint.GetComponent<DoidlePointScript>().taken = false;
+            return;
         }
     }
 
@@ -370,109 +452,9 @@ public class CharacterScript : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void ResetWaitValues()
     {
-        inDoidleArea = true;
-    }
-    private void OnTriggerExit(Collider collision)
-    {
-        inDoidleArea = false;
-    }
-    void OnColliderEnter2D(Collider2D collision)
-    {
-        //if the character is the selected character and they collide with the selected breeding partner a baby will be born
-        if (scripts.GetComponent<BreedScript>().selectedCharacter == gameObject)
-        {
-            if (collision.gameObject == scripts.GetComponent<BreedScript>().selectedBreedingPartner)
-            {
-                Debug.Log("A child is born!");
-
-                //when they touch a baby is born and the breed script is made aware that the player is no longer trying to breed. Selected character and selected breeding partner are set to null
-                Instantiate(scripts.GetComponent<BreedScript>().child, scripts.GetComponent<BreedScript>().selectedBreedingPartner.transform.position, scripts.GetComponent<BreedScript>().selectedBreedingPartner.transform.rotation);
-
-                scripts.GetComponent<BreedScript>().selectedCharacter.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
-                scripts.GetComponent<BreedScript>().selectedBreedingPartner.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
-                scripts.GetComponent<BreedScript>().selectedCharacter = null;
-                scripts.GetComponent<BreedScript>().selectedBreedingPartner = null;
-                scripts.GetComponent<BreedScript>().breeding = false;
-            }
-        }
-        else
-        {
-            return;
-        }
-    }
-
-    IEnumerator CharacterDoidling()
-    {
-        randomDirection = Random.Range(1, 5);
-        actionTimer = 0;
-        actionTime = Random.Range(1, 2.5f);
-
-        actionTimer += Time.deltaTime;
-
-        if (actionTimer < actionTime)
-        {
-            doidling = true;
-
-            if (randomDirection == 1)
-            {
-                if (doidling == true)
-                {
-                    transform.position = Vector2.up * speed * Time.deltaTime;
-                }
-                else
-                {
-                    yield return 0;
-                }
-            }
-            else if (randomDirection == 2)
-            {
-                if (doidling == true)
-                {
-                    transform.position = Vector2.down * speed * Time.deltaTime;
-                }
-                else
-                {
-                    yield return 0;
-                }
-            }
-            else if (randomDirection == 3)
-            {
-                if (doidling == true)
-                {
-                    transform.position = Vector2.left * speed * Time.deltaTime;
-                }
-                else
-                {
-                    yield return 0;
-                }
-            }
-            else if (randomDirection == 4)
-            {
-                if (doidling == true)
-                {
-                    transform.position = Vector2.right * speed * Time.deltaTime;
-                }
-                else
-                {
-                    yield return 0;
-                }
-            }
-        }
-        if (actionTimer > actionTime)
-        {
-            doidling = false;
-
-            new WaitForSeconds(Random.Range(1, 2));
-
-            randomDirection = Random.Range(1, 5);
-            actionTimer = 0;
-            actionTime = Random.Range(1, 2.5f);
-        }
-        else
-        {
-            yield break;
-        }
+        waitTime = Random.Range(1, 2.5f);
+        waitTimer = 0;
     }
 }
