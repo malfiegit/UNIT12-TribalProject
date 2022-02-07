@@ -40,6 +40,22 @@ public class BreedScript : MonoBehaviour
                 //moves the character the player wanted to breed with in the first place towards the selected breeding partner
                 selectedCharacter.transform.position = Vector2.MoveTowards(selectedCharacter.transform.position, selectedBreedingPartner.transform.position,
                     selectedCharacter.GetComponent<CharacterScript>().speed * Time.deltaTime);
+
+                if (selectedCharacter.transform.position == selectedBreedingPartner.transform.position)
+                {
+                    //when the two characters are in the same position, a child is instantiated in the position
+                    Instantiate(child, selectedBreedingPartner.transform.position, selectedBreedingPartner.transform.rotation);
+
+                    selectedCharacter.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
+                    selectedBreedingPartner.GetComponent<CharacterScript>().gameObject.transform.GetChild(3).gameObject.SetActive(false);
+
+                    selectedCharacter.GetComponent<CharacterScript>().breedCooldown = 0;
+                    selectedBreedingPartner.GetComponent<CharacterScript>().breedCooldown = 0;
+
+                    selectedCharacter = null;
+                    selectedBreedingPartner = null;
+                    breeding = false;
+                }
             }
         }
 
